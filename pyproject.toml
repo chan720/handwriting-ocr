@@ -1,0 +1,23 @@
+[project]
+name = "hwocr"
+version = "1.0.0"
+description = "Offline handwritten PDF/image to text pipeline using local vision-language models"
+requires-python = ">=3.10"
+dependencies = [
+  "pymupdf>=1.24", "pillow>=10.0", "opencv-python-headless>=4.8", "numpy>=1.24",
+  "rapidfuzz>=3.0", "requests>=2.31", "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+transformers = ["torch>=2.4", "transformers>=4.57", "accelerate>=1.0"]
+heic = ["pillow-heif>=0.16"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+hwocr = "hwocr.cli:main"
+
+[tool.setuptools]
+packages = ["hwocr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,64 @@
+# Handwriting OCR pipeline configuration.
+# Every value here can also be overridden from the command line (see `python -m hwocr run --help`).
+
+backend:
+  # ollama        -> native Ollama API (easiest; handles model download/quantisation for you)
+  # openai        -> any OpenAI-compatible server: vLLM, llama.cpp `llama-server`, LM Studio, SGLang
+  # transformers  -> load the Hugging Face model in-process (needs torch + a GPU for usable speed)
+  type: ollama
+  base_url: http://localhost:11434      # vLLM: http://localhost:8000/v1   llama.cpp: http://localhost:8080/v1
+  api_key: local                         # ignored by local servers, required by the OpenAI client format
+  model: qwen3-vl:8b                     # see README "Choosing a model"
+  timeout: 900                           # seconds per request (CPU inference can be slow)
+  max_tokens: 4096                       # max generated tokens per page / strip
+  temperature: 0.0                       # greedy decoding = most faithful transcription
+  repetition_penalty: 1.05
+  num_ctx: 16384                         # Ollama context window. Default 4096 is TOO SMALL for page images.
+  num_thread: 0                          # Ollama CPU threads; 0 = all cores. Lower it to keep a laptop responsive.
+  num_gpu: -1                            # Ollama layers on GPU; -1 = let Ollama decide, 0 = CPU only
+  disable_thinking: true                 # Qwen3/3.5 "thinking" wastes tokens and can loop on OCR
+  extra_body: {}                         # extra JSON merged into every request (openai backend)
+
+transformers:
+  model_id: Qwen/Qwen3-VL-8B-Instruct
+  device_map: auto
+  dtype: auto
+  load_in_4bit: false                    # needs bitsandbytes; fits an 8B model in ~7 GB VRAM
+  attn_implementation: null              # e.g. flash_attention_2 if installed
+
+ingest:
+  pdf_dpi: 200                           # 200-300 is right for handwriting; higher just costs tokens
+
+preprocess:
+  max_side: 2048                         # downscale longest side to this many pixels
+  min_side: 1200                         # upscale small photos so the longest side is at least this
+  deskew: true                           # fix small rotations (+-5 deg) from scanning/photographing
+  enhance_contrast: false                # CLAHE; turn on for faint pencil / faded ink
+  denoise: false                         # turn on for very grainy phone photos
+  rotate: 0                              # force rotation (90/180/270) for sideways scans
+
+tiling:
+  # off      -> always send the whole page
+  # fallback -> whole page first; re-do as horizontal strips if the output looks truncated/looping
+  # always   -> always split dense pages into strips (slower, best for small dense writing)
+  mode: fallback
+  strips: 2
+  overlap: 0.08                          # fraction of page height shared between strips if no clean gap
+
+refine:
+  # Second pass: the model re-reads the image together with its own draft and corrects it.
+  # Roughly doubles run time; usually reduces character errors on messy writing.
+  enabled: false
+
+prompt:
+  language: ""                           # e.g. "English", "Urdu", "German" - helps on ambiguous scripts
+  right_to_left: false                   # true for Arabic / Urdu / Hebrew / Persian
+  context: ""                            # optional hint, e.g. "medical prescription", "student exam answers"
+
+output:
+  formats: [txt, md, json]
+  page_separator: "\n\n"                 # separator between pages in the combined .txt
+  save_debug_images: false               # write the preprocessed images / strips next to the outputs
+
+runtime:
+  workers: 1                             # parallel page requests (raise for vLLM; keep 1 for Ollama on one GPU)

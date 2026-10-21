@@ -1,0 +1,9 @@
+pymupdf>=1.24
+pillow>=10.0
+opencv-python-headless>=4.8
+numpy>=1.24
+rapidfuzz>=3.0
+requests>=2.31
+pyyaml>=6.0
+# optional: iPhone HEIC photos
+# pillow-heif>=0.16

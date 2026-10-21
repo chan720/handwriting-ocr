@@ -1,0 +1,7 @@
+# Only needed for `--backend transformers` (in-process Hugging Face inference).
+-r requirements.txt
+torch>=2.4
+transformers>=4.57
+accelerate>=1.0
+# optional 4-bit loading on smaller GPUs:
+# bitsandbytes>=0.44
